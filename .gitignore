@@ -1,0 +1,7 @@
+.DS_Store
+build/
+.env.local
+__pycache__/
+*.pyc
+icon/AppIcon.iconset/
+icon/AppIcon-*-1024.png
