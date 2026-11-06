@@ -29,7 +29,10 @@ swiftc -O -swift-version 5 \
     "$DIR/Sources/"*.swift \
     -o "$APP/Contents/MacOS/$APP_NAME"
 
-if [ -n "$SIGN_ID" ]; then
+if [ "$SIGN_ID" = "-" ]; then
+    echo "==> 使用 ad-hoc 签名（适合发布构建）"
+    codesign --force --sign - --identifier "$BUNDLE_ID" "$APP"
+elif [ -n "$SIGN_ID" ]; then
     echo "==> 使用开发证书签名：$SIGN_ID"
     codesign --force --timestamp=none --sign "$SIGN_ID" --identifier "$BUNDLE_ID" "$APP"
 else

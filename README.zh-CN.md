@@ -38,6 +38,20 @@
 
 ## 安装
 
+### 方式 A：直接下载 Release（推荐）
+
+从 [Releases](https://github.com/siyuanxu/automount/releases/latest) 下载最新的 `AutoMount-<版本>.zip`，解压后把 `AutoMount.app` 拖到 `~/Applications`（或 `/Applications`）。
+
+Release 包是 **ad-hoc 签名**（未做公证）。第一次打开时请右键 App →「打开」，或先移除隔离属性：
+
+```bash
+xattr -dr com.apple.quarantine "$HOME/Applications/AutoMount.app"
+```
+
+先启动一次 App，然后在菜单栏图标里打开「登录时自动启动」。
+
+### 方式 B：源码构建
+
 ```bash
 git clone https://github.com/siyuanxu/automount.git
 cd automount

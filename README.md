@@ -38,6 +38,20 @@ The first run records your **current location** and **current Wi-Fi** automatica
 
 ## Install
 
+### Option A — prebuilt release (recommended)
+
+Download the latest `AutoMount-<version>.zip` from [Releases](https://github.com/siyuanxu/automount/releases/latest), unzip it, and move `AutoMount.app` to `~/Applications` (or `/Applications`).
+
+The release build is **ad-hoc signed** (not notarized). On first launch, right-click the app and choose **Open**, or remove the quarantine flag:
+
+```bash
+xattr -dr com.apple.quarantine "$HOME/Applications/AutoMount.app"
+```
+
+Launch the app once, then use the menu bar item to enable **登录时自动启动** (Start at login).
+
+### Option B — build from source
+
 ```bash
 git clone https://github.com/siyuanxu/automount.git
 cd automount
