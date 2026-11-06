@@ -49,6 +49,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func didWake() {
         Log.line("系统已唤醒，重新检查")
+        LocationProvider.shared.restartUpdates()
         scheduleEvaluate(after: 3.0)
     }
 

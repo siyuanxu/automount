@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.1] - 2026-11-06
+
+### Fixed
+
+- Location went stale while the Mac was stationary: macOS ignores `requestLocation()` while continuous updates are active, so the app could wrongly treat the Mac as "out of range" after 10 minutes and auto-unmount. The app now pauses continuous updates, requests a fresh fix, then resumes updates; it also restarts location updates after wake.
+
 ## [1.0.0] - 2026-11-06
 
 ### Added

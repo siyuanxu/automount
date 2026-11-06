@@ -9,6 +9,8 @@ final class LocationProvider: NSObject, CLLocationManagerDelegate {
     private(set) var lastFix: CLLocation?
     private(set) var lastFixDate: Date?
     private(set) var authStatus: CLAuthorizationStatus = .notDetermined
+    private var refreshInFlight = false
+    private var restartWorkItem: DispatchWorkItem?
 
     /// 位置或授权状态变化时回调（主线程）。
     var onUpdate: (() -> Void)?
@@ -17,7 +19,8 @@ final class LocationProvider: NSObject, CLLocationManagerDelegate {
         super.init()
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
-        manager.distanceFilter = 25
+        manager.distanceFilter = kCLDistanceFilterNone
+        manager.pausesLocationUpdatesAutomatically = false
     }
 
     var isAuthorized: Bool {
@@ -38,10 +41,39 @@ final class LocationProvider: NSObject, CLLocationManagerDelegate {
         }
     }
 
-    /// 主动请求一次位置（节流由调用方负责）。
+    /// 主动刷新一次位置（节流由调用方负责）。
+    ///
+    /// 静止时 `startUpdatingLocation` 可能不再产生新坐标，而持续更新期间
+    /// `requestLocation()` 会被系统忽略（"Ignoring requestLocation due to
+    /// ongoing location"）。因此先暂停持续更新，再请求一次单次定位，拿到结果后恢复。
     func requestOneShot() {
-        guard isAuthorized else { return }
+        guard isAuthorized, !refreshInFlight else { return }
+        refreshInFlight = true
+        manager.stopUpdatingLocation()
         manager.requestLocation()
+        scheduleUpdateRestart()
+    }
+
+    /// 重新启动持续定位（例如系统唤醒后）。
+    func restartUpdates() {
+        guard isAuthorized else { return }
+        restartWorkItem?.cancel()
+        refreshInFlight = false
+        manager.stopUpdatingLocation()
+        manager.startUpdatingLocation()
+    }
+
+    private func scheduleUpdateRestart() {
+        restartWorkItem?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.refreshInFlight = false
+            if self.isAuthorized {
+                self.manager.startUpdatingLocation()
+            }
+        }
+        restartWorkItem = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 8, execute: work)
     }
 
     /// 未决定时弹出系统授权框；已被拒绝时只能去系统设置。
@@ -66,6 +98,11 @@ final class LocationProvider: NSObject, CLLocationManagerDelegate {
         if location.horizontalAccuracy >= 0 {
             lastFix = location
             lastFixDate = Date()
+        }
+        if refreshInFlight {
+            refreshInFlight = false
+            restartWorkItem?.cancel()
+            manager.startUpdatingLocation()
         }
         onUpdate?()
     }

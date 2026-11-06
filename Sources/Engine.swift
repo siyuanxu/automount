@@ -37,6 +37,7 @@ final class Engine {
     private var lastMountError: String?
     private var pendingUnmountSince: Date?
     private var lastEvaluateAt = Date.distantPast
+    private var lastRefreshAttempt = Date.distantPast
     private(set) var lastStatus = Status()
     private(set) var paused = false
 
@@ -113,14 +114,19 @@ final class Engine {
             status = snapshot()
         }
 
-        if provider.isAuthorized, (provider.fixAge ?? .greatestFiniteMagnitude) > config.maxFixAgeSeconds {
+        // 静止时系统不会持续发送定位；定期主动刷新，避免 fixAge 过期被误判为离开。
+        let refreshAfter = min(300.0, max(60.0, config.maxFixAgeSeconds * 0.5))
+        if provider.isAuthorized,
+           (provider.fixAge ?? .greatestFiniteMagnitude) > refreshAfter,
+           now.timeIntervalSince(lastRefreshAttempt) > 30 {
+            lastRefreshAttempt = now
             provider.requestOneShot()
         }
 
         lastStatus = status
         onStatus?(status)
         writeStatusFile(status)
-        Log.debug("检查：\(status.conditionSummary)；ssid=\(status.ssid ?? "nil")；inGeofence=\(status.inGeofence)；mounted=\(status.mounted)")
+        Log.debug("检查：\(status.conditionSummary)；ssid=\(status.ssid ?? "nil")；age=\(Int(status.fixAge ?? -1))s；inGeofence=\(status.inGeofence)；mounted=\(status.mounted)")
 
         guard !paused else { return }
 
