@@ -38,6 +38,7 @@ final class Engine {
     private var pendingUnmountSince: Date?
     private var lastEvaluateAt = Date.distantPast
     private var lastRefreshAttempt = Date.distantPast
+    private var didForceRefreshAlias = false
     private(set) var lastStatus = Status()
     private(set) var paused = false
 
@@ -133,7 +134,9 @@ final class Engine {
         if status.conditionsMet {
             pendingUnmountSince = nil
             if let mountPoint = status.mountPoint {
-                _ = DesktopAlias.ensure(mountPoint: mountPoint, name: config.resolvedAliasName)
+                let forceRefresh = !didForceRefreshAlias
+                _ = DesktopAlias.ensure(mountPoint: mountPoint, name: config.resolvedAliasName, forceRefresh: forceRefresh)
+                didForceRefreshAlias = true
             } else if !mountInProgress && now.timeIntervalSince(lastMountAttempt) >= 60 {
                 beginMount(reason: reason)
             }
@@ -158,6 +161,7 @@ final class Engine {
 
         if !status.mounted && !mountInProgress {
             DesktopAlias.remove(name: config.resolvedAliasName)
+            didForceRefreshAlias = false
         }
     }
 
@@ -227,7 +231,8 @@ final class Engine {
                 case .success(let path):
                     self.lastMountError = nil
                     Log.line("挂载成功：\(path)")
-                    _ = DesktopAlias.ensure(mountPoint: path, name: self.config.resolvedAliasName)
+                    _ = DesktopAlias.ensure(mountPoint: path, name: self.config.resolvedAliasName, forceRefresh: true)
+                    self.didForceRefreshAlias = true
                     if self.config.openFinderOnMount {
                         NSWorkspace.shared.open(URL(fileURLWithPath: path))
                     }
@@ -266,6 +271,7 @@ final class Engine {
                     self.lastMountError = nil
                     Log.line("卸载完成")
                     DesktopAlias.remove(name: self.config.resolvedAliasName)
+                    self.didForceRefreshAlias = false
                 case .failure(let error):
                     self.lastMountError = "\(error)"
                     Log.line("卸载失败：\(error)")

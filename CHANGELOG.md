@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.2] - 2026-11-10
+
+### Fixed
+
+- The Desktop shortcut could keep a stale "?" icon after the SMB volume was unmounted and remounted (for example after sleep). AutoMount now recreates the shortcut and posts a filesystem-change notification when it mounts the share or starts while already mounted.
+
 ## [1.0.1] - 2026-11-06
 
 ### Fixed

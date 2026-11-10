@@ -9,7 +9,7 @@ enum AppInfo {
     static let agentLabel = "io.github.siyuanxu.automount"
     static let displayName = "AutoMount"
     static let statusTitle = "AutoMount"
-    static let version = "1.0.1"
+    static let version = "1.0.2"
 }
 
 enum AppPaths {
